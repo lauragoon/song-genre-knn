@@ -10,10 +10,7 @@ CLIENT_ID = ""
 CLIENT_SECRET = ""
 TEST_PLAYLIST_URL = "spotify:playlist:1C49yxU1XBkoq5yaVDbJwx"
 
-sp = spotipy.Spotify(
-            client_credentials_manager=SpotifyClientCredentials(
-            client_id=CLIENT_ID,
-            client_secret=CLIENT_SECRET))
+sp = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials(client_id=CLIENT_ID, client_secret=CLIENT_SECRET))
 
 
 def main():
