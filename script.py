@@ -1,13 +1,14 @@
-# import numpy as np
-# import math
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
-from sklearn import datasets
 from sklearn.feature_selection import chi2, SelectKBest
+from sklearn.model_selection import cross_val_score
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import MinMaxScaler
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
+
 
 CLIENT_ID = ""
 CLIENT_SECRET = ""
@@ -24,7 +25,6 @@ TRAINING_PLAYLIST_IDS = {"Hip Hop": "37i9dQZF1EQnqst5TRi17F", "Pop": "37i9dQZF1E
 GENRE_CLASS = {"Hip Hop": 0, "Pop": 1, "Country": 2, "Latin": 3, "Rock": 4, "Dance/Electronic": 5, "Indie": 6, "R&B": 7,
                "Christian": 8, "K-Pop": 9, "Metal": 10, "Jazz": 11, "Classical": 12, "Folk & Acoustic": 13, "Soul": 14,
                "Punk": 15, "Blues": 16, "Afrobeats": 17, "Funk": 18}
-NUM_FEATURES = 5
 
 SP = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials(
     client_id=CLIENT_ID,
@@ -91,14 +91,14 @@ def normalize_features(training_data):
     return training_data
 
 
-def select_features(training_data):
+def select_features(training_data, num_features):
     """
     Using Chi-Squared test.
     """
     X = training_data.iloc[:, 4:]
     y = training_data.iloc[:, 3:4]
 
-    test = SelectKBest(score_func=chi2, k=NUM_FEATURES)
+    test = SelectKBest(score_func=chi2, k=num_features)
     test.fit(X, y)
     cols = test.get_support(indices=True)
     selected_features = training_data.iloc[:, cols+4]
@@ -114,13 +114,6 @@ def get_data(playlist_ids):
     return combined_data
 
 
-def get_cleaned_data(df):
-    normalized_training_data = normalize_features(df)
-    X, y, tags = select_features(normalized_training_data)
-
-    return X, y, tags
-
-
 def visualize_data(df, filename="viz.png"):
     plt.close()
     sns.set_style("whitegrid")
@@ -130,10 +123,38 @@ def visualize_data(df, filename="viz.png"):
     # plt.show()
 
 
+def train_knn_model(df):
+    num_features = range(1, 13)
+    num_neighbors = range(10, 90)
+    max_mean = -1
+    best_f = -1
+    best_n = -1
+
+    normalized_training_data = normalize_features(df)
+
+    for f in num_features:
+        for n in num_neighbors:
+            X, y, tags = select_features(normalized_training_data, f)
+            X_arr = X.to_numpy()
+            y_arr = y.to_numpy()
+
+            knn = KNeighborsClassifier(n_neighbors=n)
+            cv_scores = cross_val_score(knn, X_arr, np.squeeze(y_arr), cv=10)
+
+            cv_scores_mean = np.mean(cv_scores)
+            if cv_scores_mean > max_mean:
+                max_mean = cv_scores_mean
+                best_f = f
+                best_n = n
+
+    print("best f: " + str(best_f) + ", best n : " + str(best_n))
+    print("highest mean: " + str(max_mean))
+
+
 def main():
     training_data = get_data(TRAINING_PLAYLIST_IDS)
     # visualize_data(training_data, "viz/training_viz.png")
-    X_train, y_train, tags_train = get_cleaned_data(training_data)
+    train_knn_model(training_data)
 
 
 main()
