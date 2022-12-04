@@ -132,7 +132,7 @@ def visualize_data(df, filename="viz.png"):
 
 def main():
     training_data = get_data(TRAINING_PLAYLIST_IDS)
-    # visualize_data(training_data, "training_viz.png")
+    # visualize_data(training_data, "viz/training_viz.png")
     X_train, y_train, tags_train = get_cleaned_data(training_data)
 
 
